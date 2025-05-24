@@ -70,6 +70,14 @@ const MedicalReportsTable = () => {
     setSelectedReport(null);
   };
 
+  const handleAssignmentChange = (updatedReport) => {
+    setReports(
+      reports.map((report) =>
+        report.id === updatedReport.id ? updatedReport : report
+      )
+    );
+  };
+
   const columns = [
     {
       field: "warning",
@@ -233,6 +241,7 @@ const MedicalReportsTable = () => {
         report={selectedReport}
         open={panelOpen}
         onClose={handlePanelClose}
+        onAssignmentChange={handleAssignmentChange}
       />
     </Box>
   );

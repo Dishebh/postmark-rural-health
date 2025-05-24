@@ -148,14 +148,30 @@ app.get("/api/reports", async (req, res) => {
   try {
     const { data, error } = await supabase
       .from("medical_reports")
-      .select("*")
+      .select(
+        `
+        *,
+        responder:responders (
+          id,
+          name,
+          email
+        )
+      `
+      )
       .order("created_at", { ascending: false });
 
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
 
-    res.json(data);
+    // Transform the data to flatten the responder object
+    const transformedData = data.map((report) => ({
+      ...report,
+      responder_id: report.responder?.id,
+      responder_name: report.responder?.name,
+      responder_email: report.responder?.email,
+      responder: undefined, // Remove the nested object
+    }));
+
+    res.json(transformedData);
   } catch (error) {
     console.error("Error fetching reports:", error);
     res.status(500).json({ error: "Failed to fetch reports" });
@@ -219,6 +235,74 @@ app.get("/api/stats", async (req, res) => {
   } catch (error) {
     console.error("Error fetching stats:", error);
     res.status(500).json({ error: "Failed to fetch statistics" });
+  }
+});
+
+// Get all responders
+app.get("/api/responders", async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("responders")
+      .select("id, name, email")
+      .order("name");
+
+    if (error) throw error;
+
+    res.json(data);
+  } catch (error) {
+    console.error("Error fetching responders:", error);
+    res.status(500).json({ error: "Failed to fetch responders" });
+  }
+});
+
+// Assign responder to a report
+app.patch("/api/reports/:id/assign", async (req, res) => {
+  const { id } = req.params;
+  const { responder_id, assigned_by } = req.body;
+
+  if (!id || !responder_id) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  try {
+    // Start a transaction
+    const { data: report, error: reportError } = await supabase
+      .from("medical_reports")
+      .update({ responder_id })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (reportError) throw reportError;
+
+    // Record in audit log
+    const { error: auditError } = await supabase
+      .from("assignment_audit")
+      .insert({
+        report_id: id,
+        responder_id,
+        assigned_by,
+      });
+
+    if (auditError) throw auditError;
+
+    // Get responder details for response
+    const { data: responder, error: responderError } = await supabase
+      .from("responders")
+      .select("name")
+      .eq("id", responder_id)
+      .single();
+
+    if (responderError) throw responderError;
+
+    res.json({
+      success: true,
+      message: `Report assigned to ${responder.name}`,
+      report,
+    });
+  } catch (error) {
+    console.error("Error assigning responder:", error);
+    res.status(500).json({ error: "Failed to assign responder" });
   }
 });
 

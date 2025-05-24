@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Drawer,
@@ -8,6 +8,11 @@ import {
   Button,
   Divider,
   Alert,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Snackbar,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import ReplyIcon from "@mui/icons-material/Reply";
@@ -15,8 +20,67 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { format } from "date-fns";
 import { CRITICAL_SYMPTOMS } from "./constants";
 import RequestTimeline from "./RequestTimeline";
+import axios from "axios";
 
-const ReportDetailsPanel = ({ report, open, onClose }) => {
+const ReportDetailsPanel = ({ report, open, onClose, onAssignmentChange }) => {
+  const [responders, setResponders] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: "" });
+
+  useEffect(() => {
+    const fetchResponders = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost:4000/api/responders"
+        );
+        setResponders(response.data);
+      } catch (error) {
+        console.error("Error fetching responders:", error);
+        setSnackbar({
+          open: true,
+          message: "Failed to load responders",
+          severity: "error",
+        });
+      }
+    };
+
+    if (open) {
+      fetchResponders();
+    }
+  }, [open]);
+
+  const handleAssign = async (responderId) => {
+    if (!report || !responderId) return;
+
+    setLoading(true);
+    try {
+      const response = await axios.patch(
+        `http://localhost:4000/api/reports/${report.id}/assign`,
+        { responder_id: responderId }
+      );
+
+      setSnackbar({
+        open: true,
+        message: response.data.message,
+        severity: "success",
+      });
+
+      // Notify parent component to refresh the report
+      if (onAssignmentChange) {
+        onAssignmentChange(response.data.report);
+      }
+    } catch (error) {
+      console.error("Error assigning responder:", error);
+      setSnackbar({
+        open: true,
+        message: "Failed to assign responder",
+        severity: "error",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!report) return null;
 
   const symptoms = Array.isArray(JSON.parse(report.symptoms))
@@ -137,6 +201,33 @@ const ReportDetailsPanel = ({ report, open, onClose }) => {
               {format(new Date(report.created_at), "PPpp")}
             </Typography>
           </Box>
+
+          <Box>
+            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+              Assignee
+            </Typography>
+            <FormControl fullWidth size="small">
+              <InputLabel id="assignee-select-label">
+                Select Responder
+              </InputLabel>
+              <Select
+                labelId="assignee-select-label"
+                value={report.responder_id || ""}
+                label="Select Responder"
+                onChange={(e) => handleAssign(e.target.value)}
+                disabled={loading}
+              >
+                <MenuItem value="">
+                  <em>Unassigned</em>
+                </MenuItem>
+                {responders.map((responder) => (
+                  <MenuItem key={responder.id} value={responder.id}>
+                    {responder.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
         </Box>
 
         <Box sx={{ mt: 2, display: "flex", gap: 2 }}>
@@ -170,6 +261,13 @@ const ReportDetailsPanel = ({ report, open, onClose }) => {
       <Box sx={{ flex: "1 1 auto", overflow: "auto" }}>
         <RequestTimeline report={report} />
       </Box>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        message={snackbar.message}
+      />
     </Drawer>
   );
 };

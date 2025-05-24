@@ -306,6 +306,127 @@ app.patch("/api/reports/:id/assign", async (req, res) => {
   }
 });
 
+// Add new responder
+app.post("/api/responders", async (req, res) => {
+  const { name, email } = req.body;
+
+  if (!name || !email) {
+    return res.status(400).json({ error: "Name and email are required" });
+  }
+
+  try {
+    // Check if email already exists
+    const { data: existingResponder, error: checkError } = await supabase
+      .from("responders")
+      .select("id")
+      .eq("email", email)
+      .single();
+
+    if (checkError && checkError.code !== "PGRST116") {
+      // PGRST116 is "no rows returned"
+      throw checkError;
+    }
+
+    if (existingResponder) {
+      return res.status(400).json({ error: "Email already registered" });
+    }
+
+    // Insert new responder
+    const { data, error } = await supabase
+      .from("responders")
+      .insert([{ name, email }])
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.status(201).json(data);
+  } catch (error) {
+    console.error("Error adding responder:", error);
+    res.status(500).json({ error: "Failed to add responder" });
+  }
+});
+
+// Update responder
+app.patch("/api/responders/:id", async (req, res) => {
+  const { id } = req.params;
+  const { name, email } = req.body;
+
+  if (!name || !email) {
+    return res.status(400).json({ error: "Name and email are required" });
+  }
+
+  try {
+    // Check if email is already used by another responder
+    const { data: existingResponder, error: checkError } = await supabase
+      .from("responders")
+      .select("id")
+      .eq("email", email)
+      .neq("id", id)
+      .single();
+
+    if (checkError && checkError.code !== "PGRST116") {
+      throw checkError;
+    }
+
+    if (existingResponder) {
+      return res.status(400).json({ error: "Email already registered" });
+    }
+
+    // Update responder
+    const { data, error } = await supabase
+      .from("responders")
+      .update({ name, email })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    if (!data) {
+      return res.status(404).json({ error: "Responder not found" });
+    }
+
+    res.json(data);
+  } catch (error) {
+    console.error("Error updating responder:", error);
+    res.status(500).json({ error: "Failed to update responder" });
+  }
+});
+
+// Delete responder
+app.delete("/api/responders/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Check if responder is assigned to any reports
+    const { data: assignedReports, error: checkError } = await supabase
+      .from("medical_reports")
+      .select("id")
+      .eq("responder_id", id)
+      .limit(1);
+
+    if (checkError) throw checkError;
+
+    if (assignedReports && assignedReports.length > 0) {
+      return res.status(400).json({
+        error:
+          "Cannot delete responder who is assigned to reports. Please reassign or resolve the reports first.",
+      });
+    }
+
+    // Delete responder
+    const { error } = await supabase.from("responders").delete().eq("id", id);
+
+    if (error) throw error;
+
+    res.json({ message: "Responder deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting responder:", error);
+    res.status(500).json({ error: "Failed to delete responder" });
+  }
+});
+
 // Start server
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {

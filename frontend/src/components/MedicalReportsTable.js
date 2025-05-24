@@ -11,12 +11,15 @@ import { DataGrid } from "@mui/x-data-grid";
 import { format } from "date-fns";
 import axios from "axios";
 import RefreshIcon from "@mui/icons-material/Refresh";
+import ReportDetailsPanel from "./ReportDetailsPanel";
 
 const MedicalReportsTable = () => {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedReport, setSelectedReport] = useState(null);
+  const [panelOpen, setPanelOpen] = useState(false);
 
   const fetchReports = async () => {
     try {
@@ -37,6 +40,16 @@ const MedicalReportsTable = () => {
   useEffect(() => {
     fetchReports();
   }, []);
+
+  const handleRowClick = (params) => {
+    setSelectedReport(params.row);
+    setPanelOpen(true);
+  };
+
+  const handlePanelClose = () => {
+    setPanelOpen(false);
+    setSelectedReport(null);
+  };
 
   const columns = [
     {
@@ -139,12 +152,30 @@ const MedicalReportsTable = () => {
           columns={columns}
           pageSize={10}
           rowsPerPageOptions={[10, 25, 50]}
-          checkboxSelection
           disableSelectionOnClick
           loading={loading || refreshing}
           getRowId={(row) => row.id}
+          onRowClick={handleRowClick}
+          sx={{
+            "& .MuiDataGrid-row:hover": {
+              cursor: "pointer",
+              backgroundColor: "rgba(0, 0, 0, 0.04)",
+            },
+            "& .MuiDataGrid-row.Mui-selected": {
+              backgroundColor: "rgba(25, 118, 210, 0.08)",
+              "&:hover": {
+                backgroundColor: "rgba(25, 118, 210, 0.12)",
+              },
+            },
+          }}
         />
       </Paper>
+
+      <ReportDetailsPanel
+        report={selectedReport}
+        open={panelOpen}
+        onClose={handlePanelClose}
+      />
     </Box>
   );
 };

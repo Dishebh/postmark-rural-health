@@ -36,9 +36,6 @@ const MedicalReportsTable = () => {
 
   useEffect(() => {
     fetchReports();
-    // Refresh data every 30 seconds
-    const interval = setInterval(fetchReports, 30000);
-    return () => clearInterval(interval);
   }, []);
 
   const columns = [

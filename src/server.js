@@ -4,6 +4,7 @@ const cors = require("cors");
 const helmet = require("helmet");
 const { createClient } = require("@supabase/supabase-js");
 const { parseMedicalReport } = require("./parser");
+const { sendAutoReply } = require("./emailService");
 
 // Initialize Express app
 const app = express();
@@ -70,58 +71,70 @@ const extractPatientName = (text) => {
 // Inbound email webhook endpoint
 app.post("/inbound-email", async (req, res) => {
   try {
-    const {
-      From: email,
-      Subject: subject,
-      TextBody: textBody,
-      Name: patientName,
-    } = req.body;
+    const { FromFull, Subject, TextBody } = req.body;
 
-    if (!email || !subject || !textBody) {
-      return res.status(400).json({
-        error: "Missing required fields: email, subject, or text body",
+    // Validate required fields
+    if (!FromFull.Name || !FromFull.Email || !Subject || !TextBody) {
+      console.error("Missing required fields:", {
+        FromFull,
+        Subject,
+        TextBody: !!TextBody,
       });
+      return res.status(400).json({ error: "Missing required fields" });
     }
 
-    // Parse the email text using our NLP parser
-    console.log("Processing new medical report from:", email);
-    const { symptoms, location } = parseMedicalReport(textBody);
+    // Parse the email content
+    const { symptoms, location } = parseMedicalReport(TextBody);
+
+    // Extract name from email (basic implementation)
+    const name = FromFull.Name;
+    const email = FromFull.Email;
 
     // Prepare data for database
     const reportData = {
-      email,
-      subject,
-      symptoms,
-      location,
+      email: email,
+      subject: Subject,
+      symptoms: symptoms,
+      location: location,
       created_at: new Date().toISOString(),
-      patient_name: patientName,
+      patient_name: name,
     };
 
-    // Log the data being saved
-    // Insert into Supabase
-    const { data, error } = await supabase
-      .from("medical_reports")
-      .insert([reportData]);
+    console.log("Saving report data:", reportData);
 
-    if (error) {
-      console.error("Database error:", error);
-      return res.status(500).json({
-        error: "Failed to save medical report",
-        details: error.message,
-      });
+    // Save to database
+    const { data, error: dbError } = await supabase
+      .from("medical_reports")
+      .insert([reportData])
+      .select();
+
+    if (dbError) {
+      console.error("Database error:", dbError);
+      return res.status(500).json({ error: "Failed to save report" });
     }
 
-    // Success response
-    return res.status(200).json({
-      message: "Medical report saved successfully",
-      data: reportData,
-    });
+    // Send auto-reply email
+    try {
+      await sendAutoReply({
+        to: email,
+        name,
+        symptoms,
+        location,
+      });
+      console.log("Auto-reply sent successfully");
+      res.json({
+        success: true,
+        message: "Report processed and auto-reply sent",
+        reportId: data[0].id,
+      });
+    } catch (emailError) {
+      // Log email error but don't fail the request
+      console.error("Failed to send auto-reply:", emailError);
+      res.status(500).json({ error: "Failed to send auto-reply" });
+    }
   } catch (error) {
-    console.error("Server error:", error);
-    return res.status(500).json({
-      error: "Internal server error",
-      details: error.message,
-    });
+    console.error("Error processing inbound email:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 

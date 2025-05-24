@@ -11,8 +11,11 @@ import { DataGrid } from "@mui/x-data-grid";
 import { format } from "date-fns";
 import axios from "axios";
 import RefreshIcon from "@mui/icons-material/Refresh";
+import WarningIcon from "@mui/icons-material/Warning";
 import ReportDetailsPanel from "./ReportDetailsPanel";
+import { CRITICAL_SYMPTOMS } from "./constants";
 
+// Reuse the same critical symptoms list
 const MedicalReportsTable = () => {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -20,6 +23,22 @@ const MedicalReportsTable = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [selectedReport, setSelectedReport] = useState(null);
   const [panelOpen, setPanelOpen] = useState(false);
+
+  // Function to check if a report has critical symptoms
+  const hasCriticalSymptoms = (symptoms) => {
+    try {
+      const symptomList = Array.isArray(JSON.parse(symptoms))
+        ? JSON.parse(symptoms)
+        : [];
+      return symptomList.some((symptom) =>
+        CRITICAL_SYMPTOMS.some((critical) =>
+          symptom.toLowerCase().includes(critical.toLowerCase())
+        )
+      );
+    } catch (e) {
+      return false;
+    }
+  };
 
   const fetchReports = async () => {
     try {
@@ -52,6 +71,27 @@ const MedicalReportsTable = () => {
   };
 
   const columns = [
+    {
+      field: "warning",
+      headerName: "",
+      width: 40,
+      sortable: false,
+      renderCell: (params) => {
+        if (hasCriticalSymptoms(params.row.symptoms)) {
+          return (
+            <Tooltip title="Urgent attention needed">
+              <WarningIcon
+                sx={{
+                  color: "warning.main",
+                  fontSize: "1.2rem",
+                }}
+              />
+            </Tooltip>
+          );
+        }
+        return null;
+      },
+    },
     {
       field: "created_at",
       headerName: "Created At",
@@ -157,17 +197,35 @@ const MedicalReportsTable = () => {
           getRowId={(row) => row.id}
           onRowClick={handleRowClick}
           sx={{
-            "& .MuiDataGrid-row:hover": {
-              cursor: "pointer",
-              backgroundColor: "rgba(0, 0, 0, 0.04)",
-            },
-            "& .MuiDataGrid-row.Mui-selected": {
-              backgroundColor: "rgba(25, 118, 210, 0.08)",
+            "& .MuiDataGrid-row": {
               "&:hover": {
-                backgroundColor: "rgba(25, 118, 210, 0.12)",
+                cursor: "pointer",
+                backgroundColor: "rgba(0, 0, 0, 0.04)",
+              },
+              "&.Mui-selected": {
+                backgroundColor: "rgba(25, 118, 210, 0.08)",
+                "&:hover": {
+                  backgroundColor: "rgba(25, 118, 210, 0.12)",
+                },
+              },
+              // Style for rows with critical symptoms
+              "&.urgent-row": {
+                backgroundColor: "rgba(255, 152, 0, 0.08)",
+                "&:hover": {
+                  backgroundColor: "rgba(255, 152, 0, 0.12)",
+                },
+                "&.Mui-selected": {
+                  backgroundColor: "rgba(255, 152, 0, 0.16)",
+                  "&:hover": {
+                    backgroundColor: "rgba(255, 152, 0, 0.2)",
+                  },
+                },
               },
             },
           }}
+          getRowClassName={(params) =>
+            hasCriticalSymptoms(params.row.symptoms) ? "urgent-row" : ""
+          }
         />
       </Paper>
 

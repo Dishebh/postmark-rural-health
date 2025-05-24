@@ -7,11 +7,13 @@ import {
   Chip,
   Button,
   Divider,
+  Alert,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import ReplyIcon from "@mui/icons-material/Reply";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { format } from "date-fns";
+import { CRITICAL_SYMPTOMS } from "./constants";
 
 const ReportDetailsPanel = ({ report, open, onClose }) => {
   if (!report) return null;
@@ -19,6 +21,13 @@ const ReportDetailsPanel = ({ report, open, onClose }) => {
   const symptoms = Array.isArray(JSON.parse(report.symptoms))
     ? JSON.parse(report.symptoms)
     : [];
+
+  // Check if any symptoms match critical conditions
+  const hasCriticalSymptoms = symptoms.some((symptom) =>
+    CRITICAL_SYMPTOMS.some((critical) =>
+      symptom.toLowerCase().includes(critical.toLowerCase())
+    )
+  );
 
   return (
     <Drawer
@@ -47,6 +56,20 @@ const ReportDetailsPanel = ({ report, open, onClose }) => {
           <CloseIcon />
         </IconButton>
       </Box>
+
+      {hasCriticalSymptoms && (
+        <Alert
+          severity="warning"
+          sx={{
+            mb: 2,
+            "& .MuiAlert-message": {
+              fontWeight: 500,
+            },
+          }}
+        >
+          Urgent attention needed!
+        </Alert>
+      )}
 
       <Divider sx={{ mb: 3 }} />
 

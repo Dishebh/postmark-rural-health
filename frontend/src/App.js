@@ -43,9 +43,6 @@ function App() {
         <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
           <DashboardStats />
           <Box sx={{ mt: 4 }}>
-            <Typography variant="h5" component="h2" gutterBottom>
-              Medical Reports
-            </Typography>
             <MedicalReportsTable />
           </Box>
         </Container>

@@ -2,7 +2,7 @@ const { ServerClient } = require("postmark");
 const { getNearbyHospitals, formatHospitalList } = require("./locationService");
 
 // Initialize Postmark client
-const postmarkClient = new ServerClient(process.env.POSTMARK_SERVER_API_TOKEN);
+// const postmarkClient = new ServerClient(process.env.POSTMARK_SERVER_API_TOKEN);
 
 // Health tips mapping for common symptoms
 const HEALTH_TIPS = {
@@ -168,6 +168,12 @@ const sendAutoReply = async ({ to, name, symptoms, location }) => {
     throw error;
   }
 };
+
+// generateEmailContent({
+//   name: "ran",
+//   symptoms: ["fever"],
+//   location: "30 Memorial Drive Avon, MA 02322",
+// });
 
 module.exports = {
   sendAutoReply,

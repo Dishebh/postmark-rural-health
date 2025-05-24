@@ -1,4 +1,5 @@
 const { ServerClient } = require("postmark");
+const { getNearbyHospitals, formatHospitalList } = require("./locationService");
 
 // Initialize Postmark client
 const postmarkClient = new ServerClient(process.env.POSTMARK_SERVER_API_TOKEN);
@@ -85,11 +86,26 @@ const getHealthTips = (symptoms) => {
  * @param {string} params.name - Patient's name
  * @param {string[]} params.symptoms - Reported symptoms
  * @param {string} params.location - Patient's location
- * @returns {Object} Email content with subject and body
+ * @returns {Promise<Object>} Email content with subject and body
  */
-const generateEmailContent = ({ name, symptoms, location }) => {
+const generateEmailContent = async ({ name, symptoms, location }) => {
   const tips = getHealthTips(symptoms);
   const locationInfo = location ? ` in ${location}` : "";
+
+  // Get nearby hospitals if location is available
+  let hospitalsInfo = "";
+  if (location) {
+    try {
+      const hospitals = await getNearbyHospitals(location);
+      hospitalsInfo = `\n\n\nNearby Medical Facilities:\n${formatHospitalList(
+        hospitals
+      )}\n`;
+    } catch (error) {
+      console.error("Error getting nearby hospitals:", error);
+      hospitalsInfo =
+        "\nUnable to fetch nearby medical facilities at this time.\n";
+    }
+  }
 
   const subject = "We received your message – here's some help";
 
@@ -102,12 +118,13 @@ Reported Symptoms:
 ${symptoms.map((s) => `- ${s}`).join("\n")}
 
 Immediate Health Tips:
-${tips.map((tip) => `- ${tip}`).join("\n")}
+${tips.map((tip) => `- ${tip}`).join("\n")}${hospitalsInfo}
 
 Important Notes:
 - These are general guidelines and not a substitute for professional medical advice
 - If your symptoms worsen or you experience severe symptoms, please seek immediate medical attention
 - Our medical team will review your case and may follow up with additional guidance
+- The listed medical facilities are based on OpenStreetMap data and may not be complete
 
 Stay safe and take care,
 Your Rural Health Support Team
@@ -127,7 +144,7 @@ Your Rural Health Support Team
  */
 const sendAutoReply = async ({ to, name, symptoms, location }) => {
   try {
-    const { subject, body } = generateEmailContent({
+    const { subject, body } = await generateEmailContent({
       name,
       symptoms,
       location,

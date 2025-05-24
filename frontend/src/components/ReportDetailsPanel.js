@@ -14,6 +14,7 @@ import ReplyIcon from "@mui/icons-material/Reply";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { format } from "date-fns";
 import { CRITICAL_SYMPTOMS } from "./constants";
+import RequestTimeline from "./RequestTimeline";
 
 const ReportDetailsPanel = ({ report, open, onClose }) => {
   if (!report) return null;
@@ -38,96 +39,104 @@ const ReportDetailsPanel = ({ report, open, onClose }) => {
         sx: {
           width: { xs: "100%", sm: 400 },
           p: 3,
+          display: "flex",
+          flexDirection: "column",
         },
       }}
     >
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 2,
-        }}
-      >
-        <Typography variant="h6" component="h2">
-          Report Details
-        </Typography>
-        <IconButton onClick={onClose} size="small">
-          <CloseIcon />
-        </IconButton>
-      </Box>
-
-      {hasCriticalSymptoms && (
-        <Alert
-          severity="warning"
+      <Box sx={{ flex: "0 0 auto" }}>
+        <Box
           sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
             mb: 2,
-            "& .MuiAlert-message": {
-              fontWeight: 500,
-            },
           }}
         >
-          Urgent attention needed!
-        </Alert>
-      )}
-
-      <Divider sx={{ mb: 3 }} />
-
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-        <Box>
-          <Typography variant="subtitle2" color="text.secondary">
-            Patient Name
+          <Typography variant="h6" component="h2">
+            Report Details
           </Typography>
-          <Typography variant="body1">{report.patient_name}</Typography>
+          <IconButton onClick={onClose} size="small">
+            <CloseIcon />
+          </IconButton>
         </Box>
 
-        <Box>
-          <Typography variant="subtitle2" color="text.secondary">
-            Email
-          </Typography>
-          <Typography variant="body1">{report.email}</Typography>
-        </Box>
+        {hasCriticalSymptoms && (
+          <Alert
+            severity="warning"
+            sx={{
+              mb: 2,
+              "& .MuiAlert-message": {
+                fontWeight: 500,
+              },
+            }}
+          >
+            Urgent attention needed!
+          </Alert>
+        )}
 
-        <Box>
-          <Typography variant="subtitle2" color="text.secondary">
-            Subject
-          </Typography>
-          <Typography variant="body1">{report.subject}</Typography>
-        </Box>
+        <Divider sx={{ mb: 3 }} />
 
-        <Box>
-          <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
-            Symptoms
-          </Typography>
-          <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-            {symptoms.map((symptom, index) => (
-              <Chip
-                key={index}
-                label={symptom}
-                color="primary"
-                variant="outlined"
-                size="small"
-              />
-            ))}
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <Box>
+            <Typography variant="subtitle2" color="text.secondary">
+              Patient Name
+            </Typography>
+            <Typography variant="body1">{report.patient_name}</Typography>
           </Box>
-        </Box>
 
-        <Box>
-          <Typography variant="subtitle2" color="text.secondary">
-            Location
-          </Typography>
-          <Typography variant="body1">
-            {report.location || "Not specified"}
-          </Typography>
-        </Box>
+          <Box>
+            <Typography variant="subtitle2" color="text.secondary">
+              Email
+            </Typography>
+            <Typography variant="body1">{report.email}</Typography>
+          </Box>
 
-        <Box>
-          <Typography variant="subtitle2" color="text.secondary">
-            Created At
-          </Typography>
-          <Typography variant="body1">
-            {format(new Date(report.created_at), "PPpp")}
-          </Typography>
+          <Box>
+            <Typography variant="subtitle2" color="text.secondary">
+              Subject
+            </Typography>
+            <Typography variant="body1">{report.subject}</Typography>
+          </Box>
+
+          <Box>
+            <Typography
+              variant="subtitle2"
+              color="text.secondary"
+              sx={{ mb: 1 }}
+            >
+              Symptoms
+            </Typography>
+            <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+              {symptoms.map((symptom, index) => (
+                <Chip
+                  key={index}
+                  label={symptom}
+                  color="primary"
+                  variant="outlined"
+                  size="small"
+                />
+              ))}
+            </Box>
+          </Box>
+
+          <Box>
+            <Typography variant="subtitle2" color="text.secondary">
+              Location
+            </Typography>
+            <Typography variant="body1">
+              {report.location || "Not specified"}
+            </Typography>
+          </Box>
+
+          <Box>
+            <Typography variant="subtitle2" color="text.secondary">
+              Created At
+            </Typography>
+            <Typography variant="body1">
+              {format(new Date(report.created_at), "PPpp")}
+            </Typography>
+          </Box>
         </Box>
 
         <Box sx={{ mt: 2, display: "flex", gap: 2 }}>
@@ -154,6 +163,12 @@ const ReportDetailsPanel = ({ report, open, onClose }) => {
             Mark Resolved
           </Button>
         </Box>
+      </Box>
+
+      <Divider sx={{ my: 3 }} />
+
+      <Box sx={{ flex: "1 1 auto", overflow: "auto" }}>
+        <RequestTimeline report={report} />
       </Box>
     </Drawer>
   );

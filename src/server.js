@@ -70,7 +70,12 @@ const extractPatientName = (text) => {
 // Inbound email webhook endpoint
 app.post("/inbound-email", async (req, res) => {
   try {
-    const { From: email, Subject: subject, TextBody: textBody } = req.body;
+    const {
+      From: email,
+      Subject: subject,
+      TextBody: textBody,
+      Name: patientName,
+    } = req.body;
 
     if (!email || !subject || !textBody) {
       return res.status(400).json({
@@ -88,7 +93,8 @@ app.post("/inbound-email", async (req, res) => {
       subject,
       symptoms,
       location,
-      received_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      patient_name: patientName,
     };
 
     // Log the data being saved
@@ -130,7 +136,7 @@ app.get("/api/reports", async (req, res) => {
     const { data, error } = await supabase
       .from("medical_reports")
       .select("*")
-      .order("received_at", { ascending: false });
+      .order("created_at", { ascending: false });
 
     if (error) {
       throw error;
@@ -159,7 +165,7 @@ app.get("/api/stats", async (req, res) => {
     const { count: reportsToday, error: todayError } = await supabase
       .from("medical_reports")
       .select("*", { count: "exact", head: true })
-      .gte("received_at", today.toISOString());
+      .gte("created_at", today.toISOString());
 
     if (todayError) throw todayError;
 
@@ -181,7 +187,8 @@ app.get("/api/stats", async (req, res) => {
 
     const symptomCounts = {};
     allReports.forEach((report) => {
-      report.symptoms.forEach((symptom) => {
+      const symptoms = JSON.parse(report.symptoms);
+      Array.from(new Set(symptoms)).forEach((symptom) => {
         symptomCounts[symptom] = (symptomCounts[symptom] || 0) + 1;
       });
     });
@@ -203,7 +210,7 @@ app.get("/api/stats", async (req, res) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

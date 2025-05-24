@@ -44,7 +44,7 @@ A Node.js application that processes inbound medical reports via email using Pos
      symptoms text[],
      location text,
      patient_name text,
-     received_at timestamp with time zone default now()
+     created_at timestamp with time zone default now()
    );
    ```
 

@@ -34,9 +34,12 @@ const LOCATION_PATTERNS = [
 const extractSymptoms = (text) => {
   // Use compromise to find medical terms
   const doc = nlp(text);
+
+  // Get all terms and filter for potential medical terms
+  // Using match() instead of terms() for better medical term detection
   const medicalTerms = doc
-    .terms()
-    .filter((term) => term.tags.has("Noun") || term.tags.has("Adjective"))
+    .match("#Noun+") // Match nouns
+    .concat(doc.match("#Adjective+")) // Match adjectives
     .out("array");
 
   // Combine compromise results with keyword matching

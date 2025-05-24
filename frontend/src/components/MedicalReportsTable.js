@@ -12,13 +12,14 @@ const MedicalReportsTable = () => {
   useEffect(() => {
     const fetchReports = async () => {
       try {
-        const response = await axios.get("http://localhost:3000/api/reports");
+        const response = await axios.get("http://localhost:4000/api/reports");
+        console.log("Fetched Reports Data:", response.data);
         setReports(response.data);
         setLoading(false);
       } catch (err) {
+        console.error("Error fetching reports:", err);
         setError("Failed to fetch reports");
         setLoading(false);
-        console.error("Error fetching reports:", err);
       }
     };
 
@@ -30,8 +31,8 @@ const MedicalReportsTable = () => {
 
   const columns = [
     {
-      field: "received_at",
-      headerName: "Received At",
+      field: "created_at",
+      headerName: "Created At",
       width: 180,
       valueFormatter: (params) => format(new Date(params.value), "PPpp"),
     },
@@ -54,19 +55,29 @@ const MedicalReportsTable = () => {
       field: "symptoms",
       headerName: "Symptoms",
       width: 250,
-      renderCell: (params) => (
-        <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
-          {params.value.map((symptom, index) => (
-            <Chip
-              key={index}
-              label={symptom}
-              size="small"
-              color="primary"
-              variant="outlined"
-            />
-          ))}
-        </Box>
-      ),
+      renderCell: (params) => {
+        return (
+          <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+            {Array.isArray(JSON.parse(params.value)) ? (
+              Array.from(new Set(JSON.parse(params.value))).map(
+                (symptom, index) => (
+                  <Chip
+                    key={index}
+                    label={symptom}
+                    size="small"
+                    color="primary"
+                    variant="outlined"
+                  />
+                )
+              )
+            ) : (
+              <Typography color="error">
+                Invalid symptoms data: {JSON.stringify(params.value)}
+              </Typography>
+            )}
+          </Box>
+        );
+      },
     },
     {
       field: "location",

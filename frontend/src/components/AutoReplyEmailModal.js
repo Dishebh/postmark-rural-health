@@ -12,34 +12,8 @@ import {
   Typography,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
-import DOMPurify from "dompurify";
 
 const AutoReplyEmailModal = ({ open, onClose, email, loading, error }) => {
-  const sanitizeHtml = (html) => {
-    return DOMPurify.sanitize(html, {
-      ALLOWED_TAGS: [
-        "p",
-        "br",
-        "strong",
-        "em",
-        "u",
-        "h1",
-        "h2",
-        "h3",
-        "h4",
-        "h5",
-        "h6",
-        "ul",
-        "ol",
-        "li",
-        "a",
-        "span",
-        "div",
-      ],
-      ALLOWED_ATTR: ["href", "target", "rel"],
-    });
-  };
-
   return (
     <Dialog
       open={open}
@@ -124,15 +98,15 @@ const AutoReplyEmailModal = ({ open, onClose, email, loading, error }) => {
               }}
             >
               <div
-                dangerouslySetInnerHTML={{
-                  __html: sanitizeHtml(email.body_html),
-                }}
                 style={{
                   fontFamily: "Arial, sans-serif",
                   fontSize: "14px",
                   lineHeight: 1.5,
+                  whiteSpace: "pre-wrap",
                 }}
-              />
+              >
+                {email.body_html}
+              </div>
             </Box>
           </>
         ) : (

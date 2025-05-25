@@ -31,7 +31,7 @@ const ReportDetailsPanel = ({ report, open, onClose, onAssignmentChange }) => {
     const fetchResponders = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:4000/api/responders"
+          `${process.env.REACT_APP_API_URL}/api/responders`
         );
         setResponders(response.data);
       } catch (error) {
@@ -55,7 +55,7 @@ const ReportDetailsPanel = ({ report, open, onClose, onAssignmentChange }) => {
     setLoading(true);
     try {
       const response = await axios.patch(
-        `http://localhost:4000/api/reports/${report.id}/assign`,
+        `${process.env.REACT_APP_API_URL}/api/reports/${report.id}/assign`,
         { responder_id: responderId }
       );
 

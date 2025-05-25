@@ -33,7 +33,9 @@ const DashboardStats = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await axios.get("http://localhost:4000/api/stats");
+        const response = await axios.get(
+          `${process.env.REACT_APP_API_URL}/api/stats`
+        );
         setStats(response.data);
       } catch (err) {
         console.error("Error fetching stats:", err);

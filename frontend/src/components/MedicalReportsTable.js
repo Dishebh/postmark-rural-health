@@ -43,7 +43,9 @@ const MedicalReportsTable = () => {
   const fetchReports = async () => {
     try {
       setRefreshing(true);
-      const response = await axios.get("http://localhost:4000/api/reports");
+      const response = await axios.get(
+        `${process.env.REACT_APP_API_URL}/api/reports`
+      );
       console.log("Fetched Reports Data:", response.data);
       setReports(response.data);
       setError(null);

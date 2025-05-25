@@ -38,7 +38,9 @@ const RespondersManager = () => {
   const fetchResponders = async () => {
     try {
       setRefreshing(true);
-      const response = await axios.get("http://localhost:4000/api/responders");
+      const response = await axios.get(
+        `${process.env.REACT_APP_API_URL}/api/responders`
+      );
       setResponders(response.data);
       setError(null);
     } catch (err) {
@@ -88,7 +90,10 @@ const RespondersManager = () => {
           severity: "info",
         });
       } else {
-        await axios.post("http://localhost:4000/api/responders", formData);
+        await axios.post(
+          `${process.env.REACT_APP_API_URL}/api/responders`,
+          formData
+        );
         setSnackbar({
           open: true,
           message: "Responder added successfully",

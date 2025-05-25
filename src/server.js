@@ -103,7 +103,7 @@ app.post("/inbound-email", async (req, res) => {
     console.log("Saving report data:", reportData);
 
     // Save to database
-    const { patient, error: dbError } = await supabase
+    const { data: patient, error: dbError } = await supabase
       .from("medical_reports")
       .insert([reportData])
       .select();

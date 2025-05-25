@@ -103,7 +103,7 @@ app.post("/inbound-email", async (req, res) => {
     console.log("Saving report data:", reportData);
 
     // Save to database
-    const { data, error: dbError } = await supabase
+    const { patient, error: dbError } = await supabase
       .from("medical_reports")
       .insert([reportData])
       .select();
@@ -123,11 +123,11 @@ app.post("/inbound-email", async (req, res) => {
       });
 
       // save the email to the database
-      const { data, error: dbError } = await supabase
+      const { data: autoReplyEmailData, error: dbError } = await supabase
         .from("auto_reply_emails")
         .insert([
           {
-            patient_id: data[0].id,
+            patient_id: patient[0].id,
             subject: autoReplyEmail.Subject,
             body_text: autoReplyEmail.TextBody,
             body_html: autoReplyEmail.HtmlBody,
@@ -138,14 +138,14 @@ app.post("/inbound-email", async (req, res) => {
       if (dbError) {
         console.error("Database error:", dbError);
       } else {
-        console.log("Email saved to database", data);
+        console.log("Email saved to database", autoReplyEmailData);
       }
 
       console.log("Auto-reply sent successfully");
       res.json({
         success: true,
         message: "Report processed and auto-reply sent",
-        reportId: data[0].id,
+        reportId: patient[0].id,
       });
     } catch (emailError) {
       // Log email error but don't fail the request

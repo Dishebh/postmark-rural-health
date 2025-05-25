@@ -156,7 +156,6 @@ const sendAutoReply = async ({ to, name, symptoms, location }) => {
       Subject: subject,
       TextBody: body,
       MessageStream: "outbound",
-      HtmlBody: body,
     };
 
     console.log("Sending auto-reply to:", to);

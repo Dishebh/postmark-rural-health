@@ -130,7 +130,7 @@ app.post("/inbound-email", async (req, res) => {
             patient_id: patient[0].id,
             subject: autoReplyEmail.Subject,
             body_text: autoReplyEmail.TextBody,
-            body_html: autoReplyEmail.HtmlBody,
+            body_html: autoReplyEmail.TextBody,
           },
         ])
         .select();

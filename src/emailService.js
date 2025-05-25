@@ -1,6 +1,5 @@
 const { ServerClient } = require("postmark");
 const { getNearbyHospitals, formatHospitalList } = require("./locationService");
-const { supabase } = require("./server");
 
 // Initialize Postmark client
 const postmarkClient = new ServerClient(process.env.POSTMARK_SERVER_API_TOKEN);
@@ -143,7 +142,7 @@ Your Rural Health Support Team
  * @param {string} params.location - Patient's location
  * @returns {Promise} Postmark send email promise
  */
-const sendAutoReply = async ({ to, name, symptoms, location, patient_id }) => {
+const sendAutoReply = async ({ to, name, symptoms, location }) => {
   try {
     const { subject, body } = await generateEmailContent({
       name,
@@ -157,31 +156,17 @@ const sendAutoReply = async ({ to, name, symptoms, location, patient_id }) => {
       Subject: subject,
       TextBody: body,
       MessageStream: "outbound",
+      HtmlBody: body,
     };
 
     console.log("Sending auto-reply to:", to);
-    const response = await postmarkClient.sendEmail(email);
-    console.log("Auto-reply sent successfully:", response.MessageID);
+    const postmarkResponse = await postmarkClient.sendEmail(email);
+    console.log("Auto-reply sent successfully:", postmarkResponse.MessageID);
 
-    // save the email to the database
-    const { data, error: dbError } = await supabase
-      .from("auto_reply_emails")
-      .insert([
-        {
-          patient_id: patient_id,
-          subject,
-          body_text: body,
-          body_html: body,
-        },
-      ])
-      .select();
-
-    if (dbError) {
-      console.error("Database error:", dbError);
-    } else {
-      console.log("Email saved to database", data);
-    }
-    return response;
+    return {
+      response: postmarkResponse,
+      autoReplyEmail: email,
+    };
   } catch (error) {
     console.error("Error sending auto-reply:", error);
     throw error;

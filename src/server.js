@@ -10,7 +10,7 @@ const { sendAutoReply } = require("./emailService");
 const app = express();
 
 // Initialize Supabase client
-export const supabase = createClient(
+const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_ANON_KEY
 );
@@ -115,13 +115,32 @@ app.post("/inbound-email", async (req, res) => {
 
     // Send auto-reply email
     try {
-      await sendAutoReply({
+      const { autoReplyEmail } = await sendAutoReply({
         to: email,
         name,
         symptoms,
         location,
-        patient_id: data[0].id,
       });
+
+      // save the email to the database
+      const { data, error: dbError } = await supabase
+        .from("auto_reply_emails")
+        .insert([
+          {
+            patient_id: data[0].id,
+            subject: autoReplyEmail.Subject,
+            body_text: autoReplyEmail.TextBody,
+            body_html: autoReplyEmail.HtmlBody,
+          },
+        ])
+        .select();
+
+      if (dbError) {
+        console.error("Database error:", dbError);
+      } else {
+        console.log("Email saved to database", data);
+      }
+
       console.log("Auto-reply sent successfully");
       res.json({
         success: true,

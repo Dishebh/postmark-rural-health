@@ -142,7 +142,7 @@ Your Rural Health Support Team
  * @param {string} params.location - Patient's location
  * @returns {Promise} Postmark send email promise
  */
-const sendAutoReply = async ({ to, name, symptoms, location }) => {
+const sendAutoReply = async ({ to, name, symptoms, location, patient_id }) => {
   try {
     const { subject, body } = await generateEmailContent({
       name,
@@ -162,6 +162,24 @@ const sendAutoReply = async ({ to, name, symptoms, location }) => {
     const response = await postmarkClient.sendEmail(email);
     console.log("Auto-reply sent successfully:", response.MessageID);
 
+    // save the email to the database
+    const { data, error: dbError } = await supabase
+      .from("auto_reply_emails")
+      .insert([
+        {
+          patient_id: patient_id,
+          subject,
+          body_text: body,
+          body_html: body,
+        },
+      ])
+      .select();
+
+    if (dbError) {
+      console.error("Database error:", dbError);
+    } else {
+      console.log("Email saved to database", data);
+    }
     return response;
   } catch (error) {
     console.error("Error sending auto-reply:", error);

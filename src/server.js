@@ -120,6 +120,7 @@ app.post("/inbound-email", async (req, res) => {
         name,
         symptoms,
         location,
+        patient_id: data[0].id,
       });
       console.log("Auto-reply sent successfully");
       res.json({
@@ -424,6 +425,34 @@ app.delete("/api/responders/:id", async (req, res) => {
   } catch (error) {
     console.error("Error deleting responder:", error);
     res.status(500).json({ error: "Failed to delete responder" });
+  }
+});
+
+// Get latest auto-reply email for a patient
+app.get("/api/reports/:id/auto-reply", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const { data, error } = await supabase
+      .from("auto_reply_emails")
+      .select("*")
+      .eq("patient_id", id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (error) {
+      if (error.code === "PGRST116") {
+        // No rows returned
+        return res.status(404).json({ error: "No auto-reply email found" });
+      }
+      throw error;
+    }
+
+    res.json(data);
+  } catch (error) {
+    console.error("Error fetching auto-reply email:", error);
+    res.status(500).json({ error: "Failed to fetch auto-reply email" });
   }
 });
 

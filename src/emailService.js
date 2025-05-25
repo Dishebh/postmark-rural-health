@@ -1,5 +1,6 @@
 const { ServerClient } = require("postmark");
 const { getNearbyHospitals, formatHospitalList } = require("./locationService");
+const { supabase } = require("./server");
 
 // Initialize Postmark client
 const postmarkClient = new ServerClient(process.env.POSTMARK_SERVER_API_TOKEN);

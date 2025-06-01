@@ -73,7 +73,7 @@ const ReportDetailsPanel = ({ report, open, onClose, onAssignmentChange }) => {
 
       // Notify parent component to refresh the report
       if (onAssignmentChange) {
-        onAssignmentChange(response.data.report);
+        onAssignmentChange(response.data.updatedReport);
       }
     } catch (error) {
       console.error("Error assigning responder:", error);

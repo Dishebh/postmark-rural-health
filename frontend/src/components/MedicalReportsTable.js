@@ -78,6 +78,7 @@ const MedicalReportsTable = () => {
         report.id === updatedReport.id ? updatedReport : report
       )
     );
+    setSelectedReport(updatedReport);
   };
 
   const columns = [

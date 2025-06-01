@@ -285,15 +285,18 @@ app.patch("/api/reports/:id/assign", async (req, res) => {
   }
 
   try {
-    // Start a transaction
-    const { data: report, error: reportError } = await supabase
+    // update the report with the responder_id
+    const { data: updatedReport, error: updateError } = await supabase
       .from("medical_reports")
       .update({ responder_id })
       .eq("id", id)
       .select()
-      .single();
+      .maybeSingle();
 
-    if (reportError) throw reportError;
+    if (updateError) {
+      console.error("Error updating report:", updateError);
+      return res.status(500).json({ error: "Failed to assign responder" });
+    }
 
     // Record in audit log
     const { error: auditError } = await supabase
@@ -304,7 +307,10 @@ app.patch("/api/reports/:id/assign", async (req, res) => {
         assigned_by,
       });
 
-    if (auditError) throw auditError;
+    if (auditError) {
+      console.error("Error recording audit:", auditError);
+      return res.status(500).json({ error: "Failed to record audit" });
+    }
 
     // Get responder details for response
     const { data: responder, error: responderError } = await supabase
@@ -313,12 +319,15 @@ app.patch("/api/reports/:id/assign", async (req, res) => {
       .eq("id", responder_id)
       .single();
 
-    if (responderError) throw responderError;
+    if (responderError) {
+      console.error("Error fetching responder:", responderError);
+      return res.status(500).json({ error: "Failed to fetch responder" });
+    }
 
     res.json({
       success: true,
       message: `Report assigned to ${responder.name}`,
-      report,
+      updatedReport,
     });
   } catch (error) {
     console.error("Error assigning responder:", error);

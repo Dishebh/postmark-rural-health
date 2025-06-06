@@ -22,6 +22,11 @@ const COMMON_SYMPTOMS = [
 
 // Location patterns to match
 const LOCATION_PATTERNS = [
+  // Full address pattern (street, city, state zip)
+  /(?:at|from|in|near|located at|based at)\s+(\d+\s+[A-Za-z\s]+(?:Street|St|Road|Rd|Avenue|Ave|Boulevard|Blvd|Lane|Ln|Drive|Dr|Court|Ct|Circle|Cir|Way|Place|Pl|Terrace|Ter)[,\s]+[A-Za-z\s]+(?:,\s*[A-Z]{2}\s*\d{5}(?:-\d{4})?)?)/i,
+  // City, State ZIP pattern
+  /(?:in|from|near|at|located in|based in)\s+([A-Za-z\s]+(?:,\s*[A-Z]{2}\s*\d{5}(?:-\d{4})?))/i,
+  // Simple location pattern (original)
   /(?:in|from|near|at)\s+([A-Za-z\s]+(?:village|town|city|district|state|province)?)/i,
   /(?:located in|based in)\s+([A-Za-z\s]+(?:village|town|city|district|state|province)?)/i,
 ];
@@ -75,8 +80,19 @@ const extractLocation = (text) => {
   const doc = nlp(text);
   const places = doc.places().out("array");
 
+  // If compromise found a place, check if it's part of a larger address
   if (places.length > 0) {
-    return places[0];
+    const place = places[0];
+    // Look for address patterns around the found place
+    for (const pattern of LOCATION_PATTERNS) {
+      const match = text.match(pattern);
+      if (match && match[1] && match[1].includes(place)) {
+        // If the place is part of a larger address, return the full address
+        return match[1].trim().replace(/[.,!?]$/, "");
+      }
+    }
+    // If no larger address found, return just the place
+    return place;
   }
 
   // Fallback to regex patterns
@@ -84,7 +100,11 @@ const extractLocation = (text) => {
     const match = text.match(pattern);
     if (match && match[1]) {
       // Clean up the location string
-      return match[1].trim().replace(/[.,!?]$/, "");
+      const location = match[1].trim().replace(/[.,!?]$/, "");
+      // Only return if we found something substantial
+      if (location.length > 2) {
+        return location;
+      }
     }
   }
 

@@ -131,176 +131,187 @@ const ReportDetailsPanel = ({ report, open, onClose, onAssignmentChange }) => {
         PaperProps={{
           sx: {
             width: { xs: "100%", sm: 400 },
-            p: 3,
+            height: "100%",
             display: "flex",
             flexDirection: "column",
+            overflow: "hidden",
           },
         }}
       >
-        <Box sx={{ flex: "0 0 auto" }}>
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              mb: 2,
-            }}
-          >
-            <Typography variant="h6" component="h2">
-              Report Details
-            </Typography>
-            <IconButton onClick={onClose} size="small">
-              <CloseIcon />
-            </IconButton>
-          </Box>
-
-          {hasCriticalSymptoms && (
-            <Alert
-              severity="warning"
+        <Box
+          sx={{
+            flex: 1,
+            minHeight: 0,
+            overflow: "auto",
+            display: "flex",
+            flexDirection: "column",
+            gap: 3,
+            p: 3,
+          }}
+        >
+          <Box>
+            <Box
               sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
                 mb: 2,
-                "& .MuiAlert-message": {
-                  fontWeight: 500,
-                },
               }}
             >
-              Urgent attention needed!
-            </Alert>
-          )}
-
-          <Divider sx={{ mb: 3 }} />
-
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <Box>
-              <Typography variant="subtitle2" color="text.secondary">
-                Patient Name
+              <Typography variant="h6" component="h2">
+                Report Details
               </Typography>
-              <Typography variant="body1">{report.patient_name}</Typography>
+              <IconButton onClick={onClose} size="small">
+                <CloseIcon />
+              </IconButton>
             </Box>
 
-            <Box>
-              <Typography variant="subtitle2" color="text.secondary">
-                Email
-              </Typography>
-              <Typography variant="body1">{report.email}</Typography>
-            </Box>
-
-            <Box>
-              <Typography variant="subtitle2" color="text.secondary">
-                Subject
-              </Typography>
-              <Typography variant="body1">{report.subject}</Typography>
-            </Box>
-
-            <Box>
-              <Typography
-                variant="subtitle2"
-                color="text.secondary"
-                sx={{ mb: 1 }}
+            {hasCriticalSymptoms && (
+              <Alert
+                severity="warning"
+                sx={{
+                  mb: 2,
+                  "& .MuiAlert-message": {
+                    fontWeight: 500,
+                  },
+                }}
               >
-                Symptoms
-              </Typography>
-              <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-                {symptoms.map((symptom, index) => (
-                  <Chip
-                    key={index}
-                    label={symptom}
-                    color="primary"
-                    variant="outlined"
-                    size="small"
-                  />
-                ))}
+                Urgent attention needed!
+              </Alert>
+            )}
+
+            <Divider sx={{ mb: 3 }} />
+
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <Box>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Patient Name
+                </Typography>
+                <Typography variant="body1">{report.patient_name}</Typography>
+              </Box>
+
+              <Box>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Email
+                </Typography>
+                <Typography variant="body1">{report.email}</Typography>
+              </Box>
+
+              <Box>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Subject
+                </Typography>
+                <Typography variant="body1">{report.subject}</Typography>
+              </Box>
+
+              <Box>
+                <Typography
+                  variant="subtitle2"
+                  color="text.secondary"
+                  sx={{ mb: 1 }}
+                >
+                  Symptoms
+                </Typography>
+                <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                  {symptoms.map((symptom, index) => (
+                    <Chip
+                      key={index}
+                      label={symptom}
+                      color="primary"
+                      variant="outlined"
+                      size="small"
+                    />
+                  ))}
+                </Box>
+              </Box>
+
+              <Box>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Location
+                </Typography>
+                <Typography variant="body1">
+                  {report.location || "Not specified"}
+                </Typography>
+              </Box>
+
+              <Box>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Created At
+                </Typography>
+                <Typography variant="body1">
+                  {format(new Date(report.created_at), "PPpp")}
+                </Typography>
+              </Box>
+
+              <Box>
+                <Typography
+                  variant="subtitle2"
+                  color="text.secondary"
+                  gutterBottom
+                >
+                  Assignee
+                </Typography>
+                <FormControl fullWidth size="small">
+                  <InputLabel id="assignee-select-label">
+                    Select Responder
+                  </InputLabel>
+                  <Select
+                    labelId="assignee-select-label"
+                    value={report.responder_id || ""}
+                    label="Select Responder"
+                    onChange={(e) => handleAssign(e.target.value)}
+                    disabled={loading}
+                  >
+                    <MenuItem value="">
+                      <em>Unassigned</em>
+                    </MenuItem>
+                    {responders.map((responder) => (
+                      <MenuItem key={responder.id} value={responder.id}>
+                        {responder.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
               </Box>
             </Box>
 
-            <Box>
-              <Typography variant="subtitle2" color="text.secondary">
-                Location
-              </Typography>
-              <Typography variant="body1">
-                {report.location || "Not specified"}
-              </Typography>
-            </Box>
-
-            <Box>
-              <Typography variant="subtitle2" color="text.secondary">
-                Created At
-              </Typography>
-              <Typography variant="body1">
-                {format(new Date(report.created_at), "PPpp")}
-              </Typography>
-            </Box>
-
-            <Box>
-              <Typography
-                variant="subtitle2"
-                color="text.secondary"
-                gutterBottom
+            <Box sx={{ mt: 2, display: "flex", gap: 2, flexWrap: "wrap" }}>
+              <Button
+                variant="contained"
+                startIcon={<ReplyIcon />}
+                fullWidth
+                onClick={() => {
+                  console.log("Reply to:", report.email);
+                }}
               >
-                Assignee
-              </Typography>
-              <FormControl fullWidth size="small">
-                <InputLabel id="assignee-select-label">
-                  Select Responder
-                </InputLabel>
-                <Select
-                  labelId="assignee-select-label"
-                  value={report.responder_id || ""}
-                  label="Select Responder"
-                  onChange={(e) => handleAssign(e.target.value)}
-                  disabled={loading}
-                >
-                  <MenuItem value="">
-                    <em>Unassigned</em>
-                  </MenuItem>
-                  {responders.map((responder) => (
-                    <MenuItem key={responder.id} value={responder.id}>
-                      {responder.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+                Reply
+              </Button>
+              <Button
+                variant="outlined"
+                startIcon={<EmailIcon />}
+                fullWidth
+                onClick={handleViewAutoReply}
+              >
+                View Auto-Reply
+              </Button>
+              <Button
+                variant="outlined"
+                startIcon={<CheckCircleIcon />}
+                fullWidth
+                onClick={() => {
+                  console.log("Mark as resolved:", report.id);
+                }}
+              >
+                Mark Resolved
+              </Button>
             </Box>
           </Box>
 
-          <Box sx={{ mt: 2, display: "flex", gap: 2, flexWrap: "wrap" }}>
-            <Button
-              variant="contained"
-              startIcon={<ReplyIcon />}
-              fullWidth
-              onClick={() => {
-                // TODO: Implement reply functionality
-                console.log("Reply to:", report.email);
-              }}
-            >
-              Reply
-            </Button>
-            <Button
-              variant="outlined"
-              startIcon={<EmailIcon />}
-              fullWidth
-              onClick={handleViewAutoReply}
-            >
-              View Auto-Reply
-            </Button>
-            <Button
-              variant="outlined"
-              startIcon={<CheckCircleIcon />}
-              fullWidth
-              onClick={() => {
-                // TODO: Implement mark as resolved functionality
-                console.log("Mark as resolved:", report.id);
-              }}
-            >
-              Mark Resolved
-            </Button>
+          <Divider />
+
+          <Box sx={{ pb: 3 }}>
+            <RequestTimeline report={report} />
           </Box>
-        </Box>
-
-        <Divider sx={{ my: 3 }} />
-
-        <Box sx={{ flex: "1 1 auto", overflow: "auto" }}>
-          <RequestTimeline report={report} />
         </Box>
       </Drawer>
 

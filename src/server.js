@@ -5,6 +5,7 @@ const helmet = require("helmet");
 const { createClient } = require("@supabase/supabase-js");
 const { parseMedicalReport } = require("./parser");
 const { sendAutoReply } = require("./emailService");
+const { maskEmail } = require("./utils/emailUtils");
 
 // Initialize Express app
 const app = express();
@@ -182,12 +183,15 @@ app.get("/api/reports", async (req, res) => {
 
     if (error) throw error;
 
-    // Transform the data to flatten the responder object
+    // Transform the data to flatten the responder object and mask emails
     const transformedData = data.map((report) => ({
       ...report,
+      email: maskEmail(report.email),
       responder_id: report.responder?.id,
       responder_name: report.responder?.name,
-      responder_email: report.responder?.email,
+      responder_email: report.responder
+        ? maskEmail(report.responder.email)
+        : undefined,
       responder: undefined, // Remove the nested object
     }));
 
@@ -268,7 +272,13 @@ app.get("/api/responders", async (req, res) => {
 
     if (error) throw error;
 
-    res.json(data);
+    // Mask emails before sending to frontend
+    const maskedData = data.map((responder) => ({
+      ...responder,
+      email: maskEmail(responder.email),
+    }));
+
+    res.json(maskedData);
   } catch (error) {
     console.error("Error fetching responders:", error);
     res.status(500).json({ error: "Failed to fetch responders" });
@@ -352,7 +362,6 @@ app.post("/api/responders", async (req, res) => {
       .single();
 
     if (checkError && checkError.code !== "PGRST116") {
-      // PGRST116 is "no rows returned"
       throw checkError;
     }
 
@@ -369,7 +378,13 @@ app.post("/api/responders", async (req, res) => {
 
     if (error) throw error;
 
-    res.status(201).json(data);
+    // Mask email before sending response
+    const maskedData = {
+      ...data,
+      email: maskEmail(data.email),
+    };
+
+    res.status(201).json(maskedData);
   } catch (error) {
     console.error("Error adding responder:", error);
     res.status(500).json({ error: "Failed to add responder" });
@@ -416,7 +431,13 @@ app.patch("/api/responders/:id", async (req, res) => {
       return res.status(404).json({ error: "Responder not found" });
     }
 
-    res.json(data);
+    // Mask email before sending response
+    const maskedData = {
+      ...data,
+      email: maskEmail(data.email),
+    };
+
+    res.json(maskedData);
   } catch (error) {
     console.error("Error updating responder:", error);
     res.status(500).json({ error: "Failed to update responder" });
@@ -471,10 +492,20 @@ app.get("/api/reports/:id/auto-reply", async (req, res) => {
 
     if (error) {
       if (error.code === "PGRST116") {
-        // No rows returned
         return res.status(404).json({ error: "No auto-reply email found" });
       }
       throw error;
+    }
+
+    // Get the associated report to mask the email
+    const { data: report } = await supabase
+      .from("medical_reports")
+      .select("email")
+      .eq("id", id)
+      .single();
+
+    if (report) {
+      data.patient_email = maskEmail(report.email);
     }
 
     res.json(data);
